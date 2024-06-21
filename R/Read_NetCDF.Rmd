@@ -1,0 +1,98 @@
+---
+title: "Access Eseal netCDF Data"
+author: "R.Holser"
+Date Created: July 19, 2023
+output:
+  html_document:
+    df_print: paged
+  word_document: default
+  pdf_document: default
+---
+
+```{r Settings, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.width = 9, message=FALSE, error=FALSE)
+
+```
+
+Updated at `r Sys.time()`
+
+```{r Libraries}
+require(ncdf4)
+require(ggplot2)
+require(ggspatial)
+require(sf)
+
+```
+
+# Opening File and Metadata
+
+NetCDF files must be accessed by first identifying and opening the file using ncid<-nc_open(filename). This ID is used to access information within the file and the file remains "open" until the command nc_close(filename) is used to close the connection.
+
+```{r}
+# set path and filename
+ncpath <- "D:/Dropbox/MATLAB/V1 NetCDF Files/"
+ncname <- "2017001_TrackTDR_Processed"  
+ncfname <- paste(ncpath, ncname, ".nc", sep="")
+
+#open netCDF file
+ncid<-nc_open(ncfname)
+```
+
+Metadata are available throughout the file as Attributes. The command ncatt_get(FileID,VariableName) will retrieve attribute information for each variable within the file. Use empty quotes for the VariableName to read Global Attributes.
+
+```{r}
+#pull in global attributes, 
+Info<-ncatt_get(ncid,"")
+print(Info)
+```
+
+In order to access the attributes of variables within groups, you include the group and variable name in quote, separated by a /: "GROUP/VAR"
+
+```{r}
+#Attributes for TRACK/DATE, 
+Info<-ncatt_get(ncid,"TRACK/DATE")
+print(Info)
+```
+
+# Reading in Data
+
+Each variable must be read in individually using the function ncvar_get(FileID,VariableName). Group and subgroup structure is indicated within the variable name: "GROUP/VAR" or "GROUP/SUBGROUP/VAR"
+
+## Track Data
+
+Tracking data are all kept in the group TRACK
+```{r}
+Lat<-ncvar_get(ncid,"TRACK/LAT")
+Lon<-ncvar_get(ncid,"TRACK/LON")
+Date<-ncvar_get(ncid,"TRACK/DATE")
+Date<-as.POSIXct(Date)
+
+track<-data.frame(Lat,Lon,Date)
+
+track <- st_as_sf(track, coords = c("Lon", "Lat"), 
+    crs = 4326, agr = "constant")
+
+world <- rnaturalearth::ne_countries(continent="North America", scale=10, returnclass="sf")%>%
+ st_transform(crs=4326) 
+
+ggplot()+
+  geom_sf(data=track)+
+  geom_sf(data=world)
+
+
+```
+
+## Diving Data
+
+Diving data are kept in the groups TDR1, TDR2, and TDR3, with TDR1 as the primary dive record.
+
+```{r}
+Lat2<-ncvar_get(ncid,"TDR1/LAT")
+Lon2<-ncvar_get(ncid,"TDR1/LON")
+Date2<-ncvar_get(ncid,"TDR1/DATE")
+Depth<-ncvar_get(ncid,"TDR1/MAXDEPTH")
+
+ggplot()+
+  geom_point(aes(Date2,Depth))
+
+```
