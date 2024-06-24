@@ -222,6 +222,26 @@ ax.YLabel.String = "Latitude";
 ax.XLabel.String = "Longitude";
 
 %% Load ZOC'd full resolution TDR data
+% load in metadata info
+AllInfo_R=ncinfo('2017001_TrackTDR_RawCurated.nc'); %Level 1&2 data file
+
+% Initialize a new structure
+MetaData = struct();
+
+% Loop through each element in the original structure
+for i = 1:length(AllInfo_R.Attributes)
+    % Get the name and value
+    name = AllInfo_R.Attributes(i).Name;
+    value = AllInfo_R.Attributes(i).Value;
+    % Convert the name to a valid field name
+    name = matlab.lang.makeValidName(name);
+    % Assign the value to the corresponding field in the new structure
+    MetaData.(name) = value;
+end
+
+% Assign the new structure back to AllInfo_Pro.Attributes if wanted
+AllInfo_R.Attributes = MetaData;
+
 
 Date = ncread('2017001_TrackTDR_RawCurated.nc', "/CLEAN_ZOC_TDR1/DATE"); % Date/time of each depth
 Date = datetime(Date, "ConvertFrom","datenum");  % Convert MATLAB serial date to datetime format
