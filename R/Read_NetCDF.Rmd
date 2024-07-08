@@ -24,16 +24,33 @@ require(plotly) #tool to generate interactive plots for exploring data
 require(lubridate)
 require(tidyverse)
 require(here)
+<<<<<<< HEAD
+=======
+
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
 ```
 
 # Opening File and Metadata
 
+<<<<<<< HEAD
 NetCDF files must be accessed by first identifying and opening the file using `ncid <-nc_open(filename)`. This ID is used to access information within the file and the file remains "open" until the command `nc_close(filename)` is used to close the connection.
+=======
+NetCDF files must be accessed by first identifying and opening the file using ncid<-nc_open(filename). This ID is used to access information within the file and the file remains "open" until the command nc_close(filename) is used to close the connection.
+
+```{r}
+# set path and filenames for processed and raw curated data
+ncpath <- here("Data/")
+
+# Use if you have access to Raw Curated data files
+ncname_raw <- "2017001_TrackTDR_RawCurated"  
+ncfname_raw <- paste(ncpath, ncname_raw, ".nc", sep="")
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
 
 ```{r nc open}
 # set path and filename for a [processed] data file (2017001_TrackTDR_Processed.nc) as an example
 ncpath <- here("Data/")
 ncname_processed <- "2017001_TrackTDR_Processed"  
+<<<<<<< HEAD
 ncfname_processed <- paste(ncpath, ncname_processed, ".nc", sep = "")
 
 #open netCDF files
@@ -41,9 +58,28 @@ ncid_P <- nc_open(ncfname_processed)
 ```
 
 Metadata are available throughout the file as Attributes. The command `ncatt_get(FileID, VariableName)` will retrieve attribute information for each variable within the file. Use `0` for the `VariableName` to read Global Attributes.
+=======
+ncfname_processed <- paste(ncpath, ncname_processed, ".nc", sep="")
+
+#open netCDF files
+ncid_R<-nc_open(ncfname_raw) # Use if you have access to Raw Curated data files
+ncid_P<-nc_open(ncfname_processed)
+```
+
+Metadata are available throughout the file as Attributes. The command ncatt_get(FileID,VariableName) will retrieve attribute information for each variable within the file. Use empty quotes for the VariableName to read Global Attributes.
+
+```{r}
+#pull in global attributes, for raw curated "_R" data
+#Curated Raw data are available if the user so chooses to process the data differently
+#However, 
+Info_global_R<-ncatt_get(ncid_R,"")
+as.data.frame(Info_global_R)
+View(Info_global_R)
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
 
 ```{r nc file attributes}
 #pull in global attributes, for processed "_P" data
+<<<<<<< HEAD
 Info_global_P <- ncatt_get(ncid_P, 0)
 
 # Convert the named list to a tibble
@@ -52,6 +88,11 @@ nc_attributes_P <- tibble(
   Type = sapply(Info_global_P, class),
   Value = unlist(Info_global_P, use.names = FALSE)
   )
+=======
+Info_global_P<-ncatt_get(ncid_P,"")
+as.data.frame(Info_global_P)
+View(Info_global_P)
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
 ```
 
 To access the attributes of variables within groups, you include the group and variable name in quotes `" "`, separated by a forward slash `/`: `"GROUP/VAR"`. You can access the `nc_attributes` tibble previously generated to more readily access the groups and variables in a file or call `Info_global_P` in the console.
@@ -183,6 +224,49 @@ track_map
 Diving data are kept in the groups TDR1, TDR2, and TDR3, with TDR1 as the primary dive record.
 
 ```{r plot TDR1 dive record}
+<<<<<<< HEAD
+=======
+
+#Pull relevant data from raw curated dive record
+# diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+# 
+# #Figure out the origin of the date-time object
+# Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+# print(Origin_CleanZOCTDR)
+# 
+# #Convert the date-time object from a character to a POSIXct
+# diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
+#                          origin = "1970-01-01", tz = "UTC")
+# 
+# Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
+# 
+# dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
+# 
+# #Plot raw curated dive record against time 
+# TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R, 
+#                        type = 'scatter', 
+#                        mode = 'lines+markers',
+#                      #so that hover labels show full date-time data
+#                      text = ~paste("Date-Time: ", diveDate_R, 
+#                                    "<br>Depth: ", Depth_R), 
+#                      hoverinfo = 'text') %>%
+#   layout(
+#     #Title of the plot will dynamically generate based on nc file info
+#     #Format = "Deployment ID Deployment Trip Processed Dive Data"
+#     title = paste0(Info_global_R$Deployment_ID, " ", 
+#                    Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
+#     yaxis = list(title = "Depth (m)",
+#                  autorange = "reversed"), #more intuitive for interpreting depth
+#     xaxis = list(title = "Date",
+#                  tickformat = "%d-%b"), #more readable than full date-time format
+#     hoverlabel = list(
+#       bgcolor = "white",  # Optional: Set background color of hover label
+#       font = list(family = "Arial", size = 12))  # Optional: Customize font
+#   )
+# 
+# TDR1_Ddat_R
+
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
 #Pull relevant data from processed dive record
 #Note pull lat-long data to later make a 3D plot of dive record
 
@@ -209,6 +293,7 @@ dive_P<- tibble(
                                   #calculate the Julian Date-Time
   )
 
+<<<<<<< HEAD
 head(dive_P)
 ```
 
@@ -218,6 +303,10 @@ Use [plotly open source graphing library](https://plotly.com/r/) to generate dyn
 
 #Plot processed dive record against time (2-D)
 TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
+=======
+#Plot processed dive record against time 
+TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDate_P, y = ~Depth_P, 
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
                        type = 'scatter', 
                        mode = 'markers',
                      #setting so that hover labels show full date-time data
@@ -241,11 +330,19 @@ TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth,
 TDR1_Ddat_P
 
 #Different way to visualize the same data but using bars instead of points
+<<<<<<< HEAD
 TDR1_Ddat_Pbar <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
                        type = 'bar', 
                      #setting so that hover labels show full date-time data
                      text = ~paste("Date-Time: ", diveDateTime, 
                                    "<br>Depth: ", diveDepth, "m"), 
+=======
+TDR1_Ddat_Pbar <- plot_ly(data = dive_P, x = ~diveDate_P, y = ~Depth_P, 
+                       type = 'bar', 
+                     #setting so that hover labels show full date-time data
+                     text = ~paste("Date-Time: ", diveDate_P, 
+                                   "<br>Depth: ", Depth_P), 
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
                      hoverinfo = 'text') %>%
   layout(
     #Title of the plot will dynamically generate based on nc file info
@@ -300,10 +397,13 @@ LatLong_TDR_P <- plot_ly(data = dive_P,
 LatLong_TDR_P
 ```
 
+<<<<<<< HEAD
 ## Load Multiple Records
 
 You can read in multiple nc files and plot their track and dive records to compare differences and similarities among records.
 
+=======
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
 ```{r Load Multiple Records}
 
 # List all files with the pattern "*Processed.nc"
@@ -349,6 +449,7 @@ for (i in 1:length(files)) {
   Tsize <- nc$dim$TRACK$len
   Dsize <- nc$dim$`TDR1/NumDives`$len
   
+<<<<<<< HEAD
   message("Tsize: ", Tsize, " QC Flags: ", metadata$Data_Track_QCFlag)
   message("Dsize: ", Dsize, " QC Flags: ", metadata$Data_TDR1_QCFlag)
   
@@ -358,6 +459,14 @@ for (i in 1:length(files)) {
   } else {
     track_data <- tibble(
 #Repeat the QC Flag, Deployment and Seal IDs for the length (Tsize) of the track file
+=======
+  message("Tsize: ", Tsize)
+  message("Dsize: ", Dsize)
+  
+  # Read track data if QC flag is appropriate
+  if (metadata$Data_Track_QCFlag <= 3) {
+    track_data <- tibble(
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
       TOPPID = rep(metadata$Deployment_ID, Tsize),
       SealID = rep(metadata$Animal_ID, Tsize),
       QCFlag = rep(metadata$Data_Track_QCFlag, Tsize),
@@ -368,12 +477,18 @@ for (i in 1:length(files)) {
     Tracks <- bind_rows(Tracks, track_data)
   }
 
+<<<<<<< HEAD
   # Read and extract dive data if QC flag is appropriate
   if (metadata$Data_TDR1_QCFlag > 3) {
      message("FYI Dive data have more than 3 QC flags. Data are not extracted.")
   } else {
     dive_data <- tibble(
 #Repeat the QC Flag, Deployment and Seal IDs for the length (Dsize) of the dive file
+=======
+  # Read dive data if QC flag is appropriate
+  if (metadata$Data_TDR1_QCFlag <= 3) {
+    dive_data <- tibble(
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
       TOPPID = rep(metadata$Deployment_ID, Dsize),
       SealID = rep(metadata$Animal_ID, Dsize),
       QCFlag = rep(metadata$Data_TDR1_QCFlag, Dsize),
@@ -405,6 +520,7 @@ Dives <- Dives %>%
   filter(!is.na(TOPPID))
 
 print("Processing completed.")
+<<<<<<< HEAD
 ```
 
 ## Plot Multiple Tracks
@@ -555,3 +671,8 @@ TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R,
 
 TDR1_Ddat_R
 ```
+=======
+
+```
+
+>>>>>>> a0ac6bcdeb9575f8964fcdd60ebdc950a8a95fa6
