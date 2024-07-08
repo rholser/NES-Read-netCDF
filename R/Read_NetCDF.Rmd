@@ -24,7 +24,6 @@ require(plotly) #tool to generate interactive plots for exploring data
 require(lubridate)
 require(tidyverse)
 require(here)
-
 ```
 
 # Opening File and Metadata
@@ -84,9 +83,9 @@ trackDate <- ncvar_get(ncid_P, "TRACK/DATE") %>%
 #Create a track dataframe for plotting
 track <- tibble(
   #Round lat-lon data to 3rd decimal place
-  Lat = as.numeric(round(trackLat, 3)),
-  Lon = as.numeric(round(trackLon, 3)),
-  DateTime = trackDate) %>% 
+  trackLat = as.numeric(round(trackLat, 3)),
+  trackLon = as.numeric(round(trackLon, 3)),
+  trackDateTime = trackDate) %>% 
   arrange(trackDate) %>% #Arrange in ascending date-time order
   #Convert Date into Julian day format for ease of color labelling
   mutate(
@@ -101,7 +100,7 @@ track <- tibble(
 head(track)
 ```
 
-### Plot the tracking data 
+### Plot the tracking data
 
 First, set up the `viridis` color scale to work with the Plotly interactive plotting environment
 
@@ -116,28 +115,26 @@ viridis_to_plotly <- function(n, option = "D") {
 
 # Convert viridis colors to Plotly format
 colorscale <- viridis_to_plotly(256, option = "D")
-
-
 ```
 
 Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive map of tracking data. Please note, an internet connection is needed to view the final output.
 
-```{r}
+```{r single record track map}
 #Plot the tracking data using the track dataframe 
 track_map <- plot_ly(data = track, 
                      type = 'scattergeo', 
                      mode = 'markers',
-                     lat = ~Lat, 
-                     lon = ~Lon, 
+                     lat = ~trackLat, 
+                     lon = ~trackLon, 
                      #Formatting for the hover labels
                      #Hover label format = 
                      #  Lat: YY.YYY
                      #  Lon: -XXX.XXX
                      #  Date-Time: YYYY-MM-DD HH:MM:SS
                      text = ~paste(
-                       "Lat: ", Lat,
-                       "Lon: ", Lon,
-                       "Date-Time: ", Date), 
+                       "Lat: ", trackLat,"°",
+                       "<br>Lon: ", trackLon,"°",
+                       "<br>Date-Time: ", trackDateTime), 
                      hoverinfo = 'text',
                      #Formatting for data points and how they are colored
                      marker = list(
@@ -186,46 +183,6 @@ track_map
 Diving data are kept in the groups TDR1, TDR2, and TDR3, with TDR1 as the primary dive record.
 
 ```{r plot TDR1 dive record}
-
-#Pull relevant data from raw curated dive record
-# diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
-# 
-# #Figure out the origin of the date-time object
-# Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
-# print(Origin_CleanZOCTDR)
-# 
-# #Convert the date-time object from a character to a POSIXct
-# diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
-#                          origin = "1970-01-01", tz = "UTC")
-# 
-# Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
-# 
-# dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
-# 
-# #Plot raw curated dive record against time 
-# TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R, 
-#                        type = 'scatter', 
-#                        mode = 'lines+markers',
-#                      #so that hover labels show full date-time data
-#                      text = ~paste("Date-Time: ", diveDate_R, 
-#                                    "<br>Depth: ", Depth_R), 
-#                      hoverinfo = 'text') %>%
-#   layout(
-#     #Title of the plot will dynamically generate based on nc file info
-#     #Format = "Deployment ID Deployment Trip Processed Dive Data"
-#     title = paste0(Info_global_R$Deployment_ID, " ", 
-#                    Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
-#     yaxis = list(title = "Depth (m)",
-#                  autorange = "reversed"), #more intuitive for interpreting depth
-#     xaxis = list(title = "Date",
-#                  tickformat = "%d-%b"), #more readable than full date-time format
-#     hoverlabel = list(
-#       bgcolor = "white",  # Optional: Set background color of hover label
-#       font = list(family = "Arial", size = 12))  # Optional: Customize font
-#   )
-# 
-# TDR1_Ddat_R
-
 #Pull relevant data from processed dive record
 #Note pull lat-long data to later make a 3D plot of dive record
 
@@ -236,26 +193,36 @@ diveDate_P <- as.POSIXct(diveDate_P, format = "%d-%b-%Y %H:%M:%S", tz = "UTC")
 Depth_P <-ncvar_get(ncid_P,"TDR1/MAXDEPTH")
 
 #create a dataframe for plotting
-dive_P<-data.frame(diveLat_P,
-                   diveLon_P,
-                   diveDate_P,
-                   Depth_P) %>% 
+dive_P<- tibble(
+  #Round lat-lon data to 3rd decimal place
+  diveLat = as.numeric(round(diveLat_P, 3)),
+  diveLon = as.numeric(round(diveLon_P, 3)),
+  diveDateTime = diveDate_P, 
+  diveDepth = Depth_P) %>% 
+  arrange(diveDateTime) %>% #Arrange in ascending date-time order
   mutate(
-    JDay = yday(diveDate_P), #extract the Julian Day from the date-time
-    DayFraction = (hour(diveDate_P) + #extract the HMS from date-time to 
-                     minute(diveDate_P)/ 60 + #calculate the fraction 
-                     second(diveDate_P) / 3600) / 24, #of the 24-hour day
+    JDay = yday(diveDateTime), #extract the Julian Day from the date-time
+    DayFraction = (hour(diveDateTime) + #extract the HMS from date-time to 
+                     minute(diveDateTime)/ 60 + #calculate the fraction 
+                     second(diveDateTime) / 3600) / 24, #of the 24-hour day
     JDateTime = JDay + DayFraction #add Julian day with the fraction to get a
                                   #calculate the Julian Date-Time
   )
 
-#Plot processed dive record against time 
-TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDate_P, y = ~Depth_P, 
+head(dive_P)
+```
+
+Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive plots of dive data. Please note, an internet connection is needed to view the final output.
+
+```{r generate a 2-D and 3-D dive plot for a single record}
+
+#Plot processed dive record against time (2-D)
+TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
                        type = 'scatter', 
                        mode = 'markers',
                      #setting so that hover labels show full date-time data
-                     text = ~paste("Date-Time: ", diveDate_P, 
-                                   "<br>Depth: ", Depth_P), 
+                     text = ~paste("Date-Time: ", diveDateTime, 
+                                   "<br>Depth: ", diveDepth, "m"), 
                      hoverinfo = 'text') %>%
   layout(
     #Title of the plot will dynamically generate based on nc file info
@@ -274,11 +241,11 @@ TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDate_P, y = ~Depth_P,
 TDR1_Ddat_P
 
 #Different way to visualize the same data but using bars instead of points
-TDR1_Ddat_Pbar <- plot_ly(data = dive_P, x = ~diveDate_P, y = ~Depth_P, 
+TDR1_Ddat_Pbar <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
                        type = 'bar', 
                      #setting so that hover labels show full date-time data
-                     text = ~paste("Date-Time: ", diveDate_P, 
-                                   "<br>Depth: ", Depth_P), 
+                     text = ~paste("Date-Time: ", diveDateTime, 
+                                   "<br>Depth: ", diveDepth, "m"), 
                      hoverinfo = 'text') %>%
   layout(
     #Title of the plot will dynamically generate based on nc file info
@@ -299,7 +266,7 @@ TDR1_Ddat_Pbar
 #Plot processed dive record on a cartesian (lat-long) grid
 #Note this is readily done only for processed data and NOT for raw curated data
 LatLong_TDR_P <- plot_ly(data = dive_P, 
-                         x = ~diveLon_P, y = ~diveLat_P, z = ~Depth_P, 
+                         x = ~diveLon, y = ~diveLat, z = ~diveDepth, 
                          type = 'scatter3d', mode = 'markers',
                          marker = list(
                            #Use the Julian Date-Time object to set the sequence
@@ -312,7 +279,12 @@ LatLong_TDR_P <- plot_ly(data = dive_P,
                              ticktext = c("trip start", "trip end"),  # Specify tick labels
                              len = 1  # Ensure color bar uses the full height
                              ),
-                           size = 3)) %>%
+                           size = 3),
+                         #setting so that hover labels show full date-time data
+                         text = ~paste("Lat: ", diveLat,"°",
+                                       "<br>Lon: ", diveLon,"°",
+                                       "<br>Depth: ", diveDepth, "m"),
+                         hoverinfo = 'text') %>%
   layout(
     scene = list(
       xaxis = list(title = 'Longitude'),
@@ -327,6 +299,10 @@ LatLong_TDR_P <- plot_ly(data = dive_P,
 
 LatLong_TDR_P
 ```
+
+## Load Multiple Records
+
+You can read in multiple nc files and plot their track and dive records to compare differences and similarities among records.
 
 ```{r Load Multiple Records}
 
@@ -429,5 +405,153 @@ Dives <- Dives %>%
   filter(!is.na(TOPPID))
 
 print("Processing completed.")
+```
 
+## Plot Multiple Tracks
+
+Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive map of tracking data. Please note, an internet connection is needed to view the final output.
+
+```{r plot multiple tracks}
+#Plot the tracking data using the Tracks aggregated dataframe 
+Tracks_map <- plot_ly(data = Tracks, 
+                     type = 'scattergeo', 
+                     mode = 'markers',
+                     split = ~SealID, 
+                     lat = ~Lat, 
+                     lon = ~Lon, 
+                     #Formatting for the hover labels
+                     #Hover label format = 
+                     #  Lat: YY.YYY
+                     #  Lon: -XXX.XXX
+                     #  Date-Time: YYYY-MM-DD HH:MM:SS
+                     text = ~paste(
+                       "Seal ID: ", SealID, 
+                       "<br>Deployment ID: ", TOPPID,
+                       "<br>Lat: ", sprintf("%.3f", Lat), "°",
+                       "<br>Lon: ", sprintf("%.3f", Lon), "°",
+                       "<br>Date-Time: ", Date), 
+                     hoverinfo = 'text',
+                     #Formatting for data points and how they are colored
+                     marker = list(
+                       colorscale = ~SealID,
+                       size = 5)) %>%
+  layout(
+    title = list(
+      #Title Format = Deployment ID Deployment Trip Processed Track Data
+      text = paste0("Aggregated and Processed Track Data"),
+      y = 0.85,  # Adjust title position vertically (0-1 range)
+      yanchor = "top"  # Optional: Anchor title position to the top
+    ),
+    geo = list(
+      projection = list(type = 'natural earth'),
+      showland = TRUE,
+      resolution = 50, # Country level resolution for map
+      landcolor = "gray",
+      #Set the initial view/extent of the map output
+      lonaxis = list(
+        range = c(-230, -60)  # Longitude range from east coasts of US to Japan
+      ),
+      lataxis = list(
+        range = c(15, 70) # Latitude range to cover relevant area
+      )
+    ),
+    #Set the whitespace margins
+    margin = list(
+      l = 10,  # Left margin (adjust as needed)
+      r = 10 # Right margin (adjust as needed)
+    ), 
+    legend = list(
+      title = list(text = 'Seal ID'),  # Add legend title
+      y = 0.5,  # Vertically center the legend
+      yanchor = 'middle'  # Anchor the legend at its middle
+    ))
+
+Tracks_map
+```
+
+## Plot Multiple Dive Records
+
+Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive 3-D plot of tracking data. Please note, an internet connection is needed to view the final output.
+
+```{r}
+#Plot processed dive records on a cartesian (lat-long) grid
+Dives_plot <- plot_ly(data = Dives, 
+                      x = ~Lon, 
+                      y = ~Lat, 
+                      z = ~Depth,
+                      split = ~SealID,
+                      type = 'scatter3d', 
+                      mode = 'markers',
+                         marker = list(
+                           colorscale = ~SealID,
+                           size = 3),
+                         #setting so that hover labels show full date-time data
+                         text = ~paste(
+                           "Seal ID: ", SealID,
+                           "<br>Deployment ID: ", TOPPID,
+                           "<br>Depth: ", Depth, "m",
+                           "<br>Duration: ", Duration, "min",
+                           "<br>Lat: ", sprintf("%.3f", Lat), "°",
+                           "<br>Lon: ", sprintf("%.3f", Lon), "°",
+                           "<br>Date-Time: ", Date),
+                         hoverinfo = 'text') %>%
+  layout(
+    scene = list(
+      xaxis = list(title = 'Longitude'),
+      yaxis = list(title = 'Latitude'),
+      zaxis = list(title = 'Depth', autorange = "reversed")
+    ),
+    #Title of the plot will dynamically generate based on nc file info
+    #Format = "Deployment ID Deployment Trip Processed 3D Dive Data"
+    title = "Aggregated and Processed 3D Dive Data",
+    legend = list(
+      title = list(text = 'Seal ID'),  # Add legend title
+      y = 0.5,  # Vertically center the legend
+      yanchor = 'middle'  # Anchor the legend at its middle
+  ))
+
+Dives_plot
+```
+
+## Load ZOC'd full resolution (Raw Curated) TDR data
+
+```{r}
+#Pull relevant data from raw curated dive record
+diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+
+#Figure out the origin of the date-time object
+Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+print(Origin_CleanZOCTDR)
+
+#Convert the date-time object from a character to a POSIXct
+diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
+                         origin = "1970-01-01", tz = "UTC")
+
+Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
+
+dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
+
+#Plot raw curated dive record against time
+TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R,
+                       type = 'scatter',
+                       mode = 'lines+markers',
+                     #so that hover labels show full date-time data
+                     text = ~paste("Date-Time: ", diveDate_R,
+                                   "<br>Depth: ", Depth_R),
+                     hoverinfo = 'text') %>%
+  layout(
+    #Title of the plot will dynamically generate based on nc file info
+    #Format = "Deployment ID Deployment Trip Processed Dive Data"
+    title = paste0(Info_global_R$Deployment_ID, " ",
+                   Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
+    yaxis = list(title = "Depth (m)",
+                 autorange = "reversed"), #more intuitive for interpreting depth
+    xaxis = list(title = "Date",
+                 tickformat = "%d-%b"), #more readable than full date-time format
+    hoverlabel = list(
+      bgcolor = "white",  # Optional: Set background color of hover label
+      font = list(family = "Arial", size = 12))  # Optional: Customize font
+  )
+
+TDR1_Ddat_R
 ```
