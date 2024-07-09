@@ -31,10 +31,10 @@ NetCDF files must be accessed by first identifying and opening the file using `n
 
 ```{r nc open}
 # set path and filename for a [processed] data file (2017001_TrackTDR_Processed.nc) as an example
-ncpath <- here("Data/")
+ncpath <- here("Data")
 ncname_processed <- "2017001_TrackTDR_Processed"  
 
-ncfname_processed <- paste(ncpath, ncname_processed, ".nc", sep = "")
+ncfname_processed <- paste(ncpath, "/", ncname_processed, ".nc", sep = "")
 
 #open netCDF files
 ncid_P <- nc_open(ncfname_processed)
@@ -357,7 +357,7 @@ for (i in 1:length(files)) {
   
   # Read and extract track data if QC flag is appropriate
   if (metadata$Data_Track_QCFlag > 3) {
-     message("FYI Track data have more than 3 QC flags. Data are not extracted.")
+     message("FYI Track data quality flag was above 3; data are not extracted.")
   } else {
     track_data <- tibble(
 #Repeat the QC Flag, Deployment and Seal IDs for the length (Tsize) of the track file
@@ -373,7 +373,7 @@ for (i in 1:length(files)) {
 
   # Read and extract dive data if QC flag is appropriate
   if (metadata$Data_TDR1_QCFlag > 3) {
-     message("FYI Dive data have more than 3 QC flags. Data are not extracted.")
+     message("FYI Dive data quality flag was above 3; data are not extracted.")
   } else {
     dive_data <- tibble(
 #Repeat the QC Flag, Deployment and Seal IDs for the length (Dsize) of the dive file
@@ -519,8 +519,21 @@ Dives_plot
 ## Load ZOC'd full resolution (Raw Curated) TDR data
 
 ```{r load raw data}
+# set path and filename for a [processed] data file (2017001_TrackTDR_Processed.nc) as an example
+#ncpath <- here("Data")
+
+# ncfname_raw <- "F:/Google Drive 2/For Salma/netCDF Code/2017001_TrackTDR_RawCurated.nc"
+# 
+# #ncfname_processed <- paste(ncpath, "/", ncname_processed, ".nc", sep = "")
+# 
+# #open netCDF files
+# ncid_R <- nc_open(ncfname_raw)
+# 
 # #Pull relevant data from raw curated dive record
 # diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+# 
+# #pull in global attributes, for raw "_R" data
+# Info_global_R <- ncatt_get(ncid_R, 0)
 # 
 # #Figure out the origin of the date-time object
 # Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
@@ -533,8 +546,8 @@ Dives_plot
 # Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
 # 
 # dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
-# 
-# #Plot raw curated dive record against time
+
+#Plot raw curated dive record against time
 # TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R,
 #                        type = 'scatter',
 #                        mode = 'lines+markers',
