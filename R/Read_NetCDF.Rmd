@@ -1,21 +1,22 @@
 ---
 title: "Access Eseal netCDF Data"
-author: "R.Holser and S. Abdel-Raheem"
+author: "R. Holser and S. Abdel-Raheem"
 Date Created: July 19, 2023
 output:
   html_document:
+    code_folding: hide
     df_print: paged
   word_document: default
   pdf_document: default
 ---
 
 ```{r Settings, echo=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, fig.width = 9, message=FALSE, error=FALSE)
+knitr::opts_chunk$set(warning = FALSE, fig.width = 9, message=FALSE, error=FALSE)
 ```
 
 Updated at `r Sys.time()`
 
-```{r Libraries}
+```{r Libraries, echo=FALSE}
 require(ncdf4)
 require(ggspatial)
 require(sf)
@@ -27,9 +28,9 @@ require(here)
 
 # Opening File and Metadata
 
-NetCDF files must be accessed by first identifying and opening the file using `ncid <-nc_open(filename)`. This ID is used to access information within the file and the file remains "open" until the command `nc_close(filename)` is used to close the connection.
+NetCDF files must be accessed by first identifying and opening the file using `ncid <- nc_open(filename)`. This ID is used to access information within the file and the file remains "open" until the command `nc_close(filename)` is used to close the connection.
 
-```{r nc open}
+```{r nc open, class.source = 'fold-show'}
 # set path and filename for a [processed] data file (2017001_TrackTDR_Processed.nc) as an example
 ncpath <- here("Data")
 ncname_processed <- "2017001_TrackTDR_Processed"  
@@ -40,9 +41,9 @@ ncfname_processed <- paste(ncpath, "/", ncname_processed, ".nc", sep = "")
 ncid_P <- nc_open(ncfname_processed)
 ```
 
-Metadata are available throughout the file as Attributes. The command `ncatt_get(FileID, VariableName)` will retrieve attribute information for each variable within the file. Use `0` for the `VariableName` to read Global Attributes.
+Metadata are available throughout the file as attributes. The command `ncatt_get(FileID, VariableName)` will retrieve attribute information for each variable within the file. Use `0` for the `VariableName` to read Global Attributes.
 
-```{r nc file attributes}
+```{r nc file attributes, class.source = 'fold-show'}
 #pull in global attributes, for processed "_P" data
 Info_global_P <- ncatt_get(ncid_P, 0)
 
@@ -56,7 +57,7 @@ nc_attributes_P <- tibble(
 
 To access the attributes of variables within groups, you include the group and variable name in quotes `" "`, separated by a forward slash `/`: `"GROUP/VAR"`. You can access the `nc_attributes` tibble previously generated to more readily access the groups and variables in a file or call `Info_global_P` in the console.
 
-```{r track attributes}
+```{r track attributes, class.source = 'fold-show'}
 #Attributes for TRACK/DATE, 
 Info_track_P <- ncatt_get(ncid_P,"TRACK/DATE")
 print(Info_track_P)
@@ -72,7 +73,7 @@ Tracking data are all kept in the group `TRACK`. Processed files have compiled a
 
 First, create a pared down data frame from the `TRACK` data group. Use the `ncvar_get()` function to call on the variable of interest from the group using the notation introduced prior, i.e. `ncvar_get(ncfile, "GROUP/VAR")`. Select the `"TRACK/LAT"`, `"TRACK/LON"`, and `"TRACK/DATE"` variables and combine them in a data frame/tibble.
 
-```{r plot tracking data}
+```{r plot tracking data, class.source = 'fold-show'}
 
 #Pull relevant data from processed track record
 trackLat <- ncvar_get(ncid_P, "TRACK/LAT")
@@ -102,9 +103,8 @@ head(track)
 
 ### Plot the tracking data
 
-Next, set up the `viridis` color scale to work with the Plotly interactive plotting environment
-
 ```{r color scale set up}
+#Next, set up the viridis color scale to work with the Plotly interactive plotting environment
 library(viridis)
 
 # Function to convert viridis to Plotly format
@@ -188,8 +188,8 @@ Diving data are kept in the groups `TDR1`, `TDR2`, and `TDR3`, with `TDR1` as th
 
 diveLat_P <-ncvar_get(ncid_P,"TDR1/LAT")
 diveLon_P <-ncvar_get(ncid_P,"TDR1/LON")
-diveDate_P <-ncvar_get(ncid_P,"TDR1/DATE")
-diveDate_P <- as.POSIXct(diveDate_P, format = "%d-%b-%Y %H:%M:%S", tz = "UTC")
+diveDate_P <-ncvar_get(ncid_P,"TDR1/DATE") %>% 
+  as.POSIXct(format = "%d-%b-%Y %H:%M:%S", tz = "UTC")
 Depth_P <-ncvar_get(ncid_P,"TDR1/MAXDEPTH")
 
 #create a dataframe for plotting
@@ -218,7 +218,7 @@ Use [plotly open source graphing library](https://plotly.com/r/) to generate dyn
 
 ```{r generate a 2-D and 3-D dive plot for a single record}
 #Plot processed dive record against time (2-D)
-TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
+TDR1_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
                        type = 'scatter', 
                        mode = 'markers',
                      #setting so that hover labels show full date-time data
@@ -239,10 +239,10 @@ TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth,
       font = list(family = "Arial", size = 12))  # Optional: Customize font
   )
 
-TDR1_Ddat_P
+TDR1_P
 
 #Different way to visualize the same data but using bars instead of points
-TDR1_Ddat_Pbar <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
+TDR1_Pbar <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
                        type = 'bar', 
                      #setting so that hover labels show full date-time data
                      text = ~paste("Date-Time: ", diveDateTime, 
@@ -262,7 +262,7 @@ TDR1_Ddat_Pbar <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth,
       font = list(family = "Arial", size = 12))  # Optional: Customize font
   )
 
-TDR1_Ddat_Pbar
+TDR1_Pbar
 
 #Plot processed dive record on a cartesian (lat-long) grid
 #Note this is readily done only for processed data and NOT for raw curated data
@@ -305,7 +305,7 @@ LatLong_TDR_P
 
 ### Read in Multiple Track and Dive Records
 
-You can read in multiple nc files and plot their track and dive records to compare differences and similarities among records.
+You can read in multiple nc files and plot their track and dive records to compare differences and similarities among records. Below is an example of a for-loop that loads and reads in 6 netCDF files and extracts relevant data for plotting. 
 
 ```{r Load Multiple Records}
 
@@ -516,58 +516,60 @@ Dives_plot <- plot_ly(data = Dives,
 Dives_plot
 ```
 
-## Load ZOC'd full resolution (Raw Curated) TDR data
+## Load and plot ZOC'd full resolution (Raw Curated) TDR data
 
-```{r load raw data}
-# set path and filename for a [processed] data file (2017001_TrackTDR_Processed.nc) as an example
-#ncpath <- here("Data")
+Full resolution TDR data files are quite large and are stored on Dryad open data publishing platform doi: <http://doi.org/10.7291/D18D7W>.
 
-# ncfname_raw <- "F:/Google Drive 2/For Salma/netCDF Code/2017001_TrackTDR_RawCurated.nc"
-# 
-# #ncfname_processed <- paste(ncpath, "/", ncname_processed, ".nc", sep = "")
-# 
-# #open netCDF files
-# ncid_R <- nc_open(ncfname_raw)
-# 
-# #Pull relevant data from raw curated dive record
-# diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
-# 
-# #pull in global attributes, for raw "_R" data
-# Info_global_R <- ncatt_get(ncid_R, 0)
-# 
-# #Figure out the origin of the date-time object
-# Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
-# print(Origin_CleanZOCTDR)
-# 
-# #Convert the date-time object from a character to a POSIXct
-# diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
-#                          origin = "1970-01-01", tz = "UTC")
-# 
-# Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
-# 
-# dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
+To load and read the data follow the steps previously demonstrated. Because of the size of these files, using the plotly interactive plotting library is hugely processing intensive and may cause R to crash when attempting to plot the raw curated data. For the larger raw curated data files, plotting is demonstrated using ggplot.
 
-#Plot raw curated dive record against time
-# TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R,
-#                        type = 'scatter',
-#                        mode = 'lines+markers',
-#                      #so that hover labels show full date-time data
-#                      text = ~paste("Date-Time: ", diveDate_R,
-#                                    "<br>Depth: ", Depth_R),
-#                      hoverinfo = 'text') %>%
-#   layout(
-#     #Title of the plot will dynamically generate based on nc file info
-#     #Format = "Deployment ID Deployment Trip Processed Dive Data"
-#     title = paste0(Info_global_R$Deployment_ID, " ",
-#                    Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
-#     yaxis = list(title = "Depth (m)",
-#                  autorange = "reversed"), #more intuitive for interpreting depth
-#     xaxis = list(title = "Date",
-#                  tickformat = "%d-%b"), #more readable than full date-time format
-#     hoverlabel = list(
-#       bgcolor = "white",  # Optional: Set background color of hover label
-#       font = list(family = "Arial", size = 12))  # Optional: Customize font
-#   )
-# 
-# TDR1_Ddat_R
+```{r raw data, echo=FALSE}
+# set path and filename for a Raw Curated data file (2017001_TrackTDR_RawCurated.nc) as an example
+#note that because Raw Curated files are stored on Dryad, these files will have a different path than the processed files shared and stored on GitHub. 
+
+ncpath_R <- here("/Users/salmaabdel-raheem/Documents/GitHub/PhD/NCFileExploration")
+
+ncname_R <- "2017001_TrackTDR_RawCurated"
+ncfname_R <- paste(ncpath_R, "/", ncname_R, ".nc", sep = "")
+
+#open netCDF files
+ncid_R <- nc_open(ncfname_R)
+
+#Pull relevant data from raw curated dive record
+diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+
+#pull in global attributes, for raw "_R" data
+Info_global_R <- ncatt_get(ncid_R, 0)
+
+#Figure out the origin of the date-time object
+Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+print(Origin_CleanZOCTDR)
+
+#Convert the date-time object from a character to a POSIXct
+diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
+                          origin = "1970-01-01", tz = "UTC")
+
+Depth_R <- ncvar_get(ncid_R, "CLEAN_ZOC_TDR1/DEPTH")
+
+#create a dataframe for plotting
+dive_R <- tibble(diveDate_R, Depth_R)
+
+#Plot raw curated dive record against time.
+
+TDR1_R <- ggplot(dive_R, aes(x = diveDate_R, y = Depth_R)) +
+  geom_line(color = "#38618A") +
+  labs(
+    title = paste0(Info_global_R$Deployment_ID, " ",
+                   Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
+    x = "Date",
+    y = "Depth (m)"
+  ) +
+  scale_y_reverse() +
+  scale_x_datetime(date_breaks = "2 weeks", date_labels = "%d-%b") +
+  theme_minimal() +
+  theme(
+    panel.background = element_rect(color = "lightgray", size = 1)
+  )
+
+TDR1_R
+
 ```
