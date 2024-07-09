@@ -68,11 +68,11 @@ Each variable must be read individually using the function `ncvar_get(FileID, Va
 
 ## Track Data
 
-Tracking data are all kept in the group `TRACK`
+Tracking data are all kept in the group `TRACK`. Processed files have compiled and interpolated tracking data which are represented at equal temporal distributions. Raw curated track data are not processed and so can over-represent presence data. Below is a demonstration of how to plot a single track record.
+
+First, create a pared down data frame from the `TRACK` data group. Use the `ncvar_get()` function to call on the variable of interest from the group using the notation introduced prior, i.e. `ncvar_get(ncfile, "GROUP/VAR")`. Select the `"TRACK/LAT"`, `"TRACK/LON"`, and `"TRACK/DATE"` variables and combine them in a data frame/tibble.
 
 ```{r plot tracking data}
-#Processed files have compiled and interpolated track data which are represented at equal temporal distributions. 
-  #Raw curated track data are not processed and so can over-represent presence data.
 
 #Pull relevant data from processed track record
 trackLat <- ncvar_get(ncid_P, "TRACK/LAT")
@@ -102,7 +102,7 @@ head(track)
 
 ### Plot the tracking data
 
-First, set up the `viridis` color scale to work with the Plotly interactive plotting environment
+Next, set up the `viridis` color scale to work with the Plotly interactive plotting environment
 
 ```{r color scale set up}
 library(viridis)
@@ -180,7 +180,7 @@ track_map
 
 ## Diving Data
 
-Diving data are kept in the groups TDR1, TDR2, and TDR3, with TDR1 as the primary dive record.
+Diving data are kept in the groups `TDR1`, `TDR2`, and `TDR3`, with `TDR1` as the primary dive record. Similar to the `TRACK` map, to plot dive data, first create a pared down data frame of the variables of interest using the `ncvar_get()` function and reference the `TDR1` group to extract and compile `LAT`, `LON`, `DATE`, and `DEPTH` data.
 
 ```{r plot TDR1 dive record}
 #Pull relevant data from processed dive record
@@ -212,10 +212,11 @@ dive_P<- tibble(
 head(dive_P)
 ```
 
+### Plot the diving data
+
 Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive plots of dive data. Please note, an internet connection is needed to view the final output.
 
 ```{r generate a 2-D and 3-D dive plot for a single record}
-
 #Plot processed dive record against time (2-D)
 TDR1_Ddat_P <- plot_ly(data = dive_P, x = ~diveDateTime, y = ~diveDepth, 
                        type = 'scatter', 
@@ -300,7 +301,9 @@ LatLong_TDR_P <- plot_ly(data = dive_P,
 LatLong_TDR_P
 ```
 
-## Load Multiple Records
+## Load and Plot Multiple Records
+
+### Read in Multiple Track and Dive Records
 
 You can read in multiple nc files and plot their track and dive records to compare differences and similarities among records.
 
@@ -407,7 +410,7 @@ Dives <- Dives %>%
 print("Processing completed.")
 ```
 
-## Plot Multiple Tracks
+### Plot Multiple Tracks
 
 Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive map of tracking data. Please note, an internet connection is needed to view the final output.
 
@@ -469,11 +472,11 @@ Tracks_map <- plot_ly(data = Tracks,
 Tracks_map
 ```
 
-## Plot Multiple Dive Records
+### Plot Multiple Dive Records
 
 Use [plotly open source graphing library](https://plotly.com/r/) to generate dynamic and interactive 3-D plot of tracking data. Please note, an internet connection is needed to view the final output.
 
-```{r}
+```{r plot multiple dive records}
 #Plot processed dive records on a cartesian (lat-long) grid
 Dives_plot <- plot_ly(data = Dives, 
                       x = ~Lon, 
@@ -515,43 +518,43 @@ Dives_plot
 
 ## Load ZOC'd full resolution (Raw Curated) TDR data
 
-```{r}
-#Pull relevant data from raw curated dive record
-diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
-
-#Figure out the origin of the date-time object
-Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
-print(Origin_CleanZOCTDR)
-
-#Convert the date-time object from a character to a POSIXct
-diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
-                         origin = "1970-01-01", tz = "UTC")
-
-Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
-
-dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
-
-#Plot raw curated dive record against time
-TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R,
-                       type = 'scatter',
-                       mode = 'lines+markers',
-                     #so that hover labels show full date-time data
-                     text = ~paste("Date-Time: ", diveDate_R,
-                                   "<br>Depth: ", Depth_R),
-                     hoverinfo = 'text') %>%
-  layout(
-    #Title of the plot will dynamically generate based on nc file info
-    #Format = "Deployment ID Deployment Trip Processed Dive Data"
-    title = paste0(Info_global_R$Deployment_ID, " ",
-                   Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
-    yaxis = list(title = "Depth (m)",
-                 autorange = "reversed"), #more intuitive for interpreting depth
-    xaxis = list(title = "Date",
-                 tickformat = "%d-%b"), #more readable than full date-time format
-    hoverlabel = list(
-      bgcolor = "white",  # Optional: Set background color of hover label
-      font = list(family = "Arial", size = 12))  # Optional: Customize font
-  )
-
-TDR1_Ddat_R
+```{r load raw data}
+# #Pull relevant data from raw curated dive record
+# diveDate_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+# 
+# #Figure out the origin of the date-time object
+# Origin_CleanZOCTDR<-ncatt_get(ncid_R,"CLEAN_ZOC_TDR1/DATE")
+# print(Origin_CleanZOCTDR)
+# 
+# #Convert the date-time object from a character to a POSIXct
+# diveDate_R <- as.POSIXct(((diveDate_R - 719529)*86400),
+#                          origin = "1970-01-01", tz = "UTC")
+# 
+# Depth_R <-ncvar_get(ncid_R,"CLEAN_ZOC_TDR1/DEPTH")
+# 
+# dive_R<-data.frame(diveDate_R,Depth_R)  #create a dataframe for plotting
+# 
+# #Plot raw curated dive record against time
+# TDR1_Ddat_R <- plot_ly(data = dive_R, x = ~diveDate_R, y = ~Depth_R,
+#                        type = 'scatter',
+#                        mode = 'lines+markers',
+#                      #so that hover labels show full date-time data
+#                      text = ~paste("Date-Time: ", diveDate_R,
+#                                    "<br>Depth: ", Depth_R),
+#                      hoverinfo = 'text') %>%
+#   layout(
+#     #Title of the plot will dynamically generate based on nc file info
+#     #Format = "Deployment ID Deployment Trip Processed Dive Data"
+#     title = paste0(Info_global_R$Deployment_ID, " ",
+#                    Info_global_R$Deployment_Trip, " Raw Curated Dive Data"),
+#     yaxis = list(title = "Depth (m)",
+#                  autorange = "reversed"), #more intuitive for interpreting depth
+#     xaxis = list(title = "Date",
+#                  tickformat = "%d-%b"), #more readable than full date-time format
+#     hoverlabel = list(
+#       bgcolor = "white",  # Optional: Set background color of hover label
+#       font = list(family = "Arial", size = 12))  # Optional: Customize font
+#   )
+# 
+# TDR1_Ddat_R
 ```
